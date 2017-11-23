@@ -34,7 +34,7 @@ abc2svg (https://github.com/moinejf/abc2svg)
 4.  install pixelmatch (https://github.com/mapbox/pixelmatch)
 
     ``` {.sh}
-    npm -g pixelmatch
+    npm install -g pixelmatch
     ```
 
 5.  create a folder for your testdata, e.g. `{wherever}/test-abc2svg`
