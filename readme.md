@@ -25,19 +25,27 @@ abc2svg (https://github.com/moinejf/abc2svg)
 
 1.  clone this repository to `{wherever}/test-abc2svg-lib`
 2.  cd to `{wherever}/test-abc2svg-lib`
-3.  execute
+3.  install the required ruby gems
 
-    `bundle install`
+    ``` {.sh}
+    bundle install 
+    ```
 
-4.  create a folder for your testdata, e.g. `{wherever}/test-abc2svg`
-5.  cd to `{wherever}/test-abc2svg`
-6.  create `{wherever}/test-abc2svg/rakefile.rb`
+4.  install pixelmatch (https://github.com/mapbox/pixelmatch)
+
+    ``` {.sh}
+    npm -g pixelmatch
+    ```
+
+5.  create a folder for your testdata, e.g. `{wherever}/test-abc2svg`
+6.  cd to `{wherever}/test-abc2svg`
+7.  create `{wherever}/test-abc2svg/rakefile.rb`
 
     ``` {.ruby}
     require '../test-abc2svg-lib/rakefile.rb'
     ```
 
-7.  create `{wherever}/test-abc2svg/config.mft.rb`
+8.  create `{wherever}/test-abc2svg/config.mft.rb`
 
     ``` {.ruby}
     testfolder = "."
@@ -45,7 +53,9 @@ abc2svg (https://github.com/moinejf/abc2svg)
         testoutputfolder:    "#{testfolder}/test-output",
         testreferencefolder: "#{testfolder}/test-reference",
         testresultfolder:    "#{testfolder}/test-results",
+        testdifffolder:      "#{testfolder}/test-diff",
         sourcefiles:         Dir["../**/*.abc"].uniq {|f| File.basename(f)}, 
+        chrome:              '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome',
 
         abc2svghome:         "../abc2svg"
     }
@@ -53,26 +63,30 @@ abc2svg (https://github.com/moinejf/abc2svg)
 
     Be sure to enter a proper glob patten for `sourcefiles:`
 
-8.  initialize
+    The entry `chrome:` is optional. It should point to the executeable
+    for headless chromee. If it is given we get visual diffs in
+    testdifffolder.
+
+9.  initialize
 
     ``` {.sh}
     rake init    
     ```
 
-9.  list available tasks
+10. list available tasks
 
     ``` {.sh}
     rake 
     ```
 
-10. create first reference
+11. create first reference
 
     ``` {.sh}
     rake rspec
     rake buildreference
     ```
 
-11. commit this to git if you wish
+12. commit this to git if you wish
 
 # Hints
 

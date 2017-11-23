@@ -13,7 +13,10 @@ else
         testoutputfolder:    "\#{testfolder}/test-output",
         testreferencefolder: "\#{testfolder}/test-reference",
         testresultfolder:    "\#{testfolder}/test-results",
+        testdifffolder:      "\#{testfolder}/test-diff",
         sourcefiles:         Dir["../**/*.abc"].uniq {|f| File.basename(f)},
+
+        chrome:              '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome',
 
         abc2svghome:         "../abc2svg"
     }
@@ -47,8 +50,8 @@ end
 desc "copy testresults to reference"
 task :buildreference, [:example]  do |t, args|
   pattern = "*#{args[:example]}*"
-  File.open("#{$conf[:testreferencefolder]}/0000_abcversion.txt", "w") do |f|
-    f.puts %Q{reference produced with #{abcversion} }
+  File.open("#{$conf[:testreferencefolder]}/0000_abc2svg_version.txt", "w") do |f|
+    f.puts %Q{reference produced with abc2svg #{abcversion} }
   end
 
   Dir["#{$conf[:testoutputfolder]}/#{pattern}"].each{|file| cp file, $conf[:testreferencefolder]}
@@ -63,7 +66,7 @@ end
 
 desc "initialize the requested folders"
 task :init do
-  [:testreferencefolder, :testoutputfolder, :testresultfolder].each do |name|
+  [:testreferencefolder, :testoutputfolder, :testresultfolder, :testdifffolder].each do |name|
     mkdir_p $conf[name]
   end
 end
