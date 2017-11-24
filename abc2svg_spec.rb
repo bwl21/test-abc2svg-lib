@@ -23,19 +23,25 @@ describe "abc2svg commandline" do
 
       chrome = $conf[:chrome]
 
-      if chrome
-        fullfile = File.absolute_path("#{$conf[:testoutputfolder]}/#{outfilename}.html").gsub(" ", "%20")
-        cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=1280,1696 "file://#{fullfile}" &> chrome.log}
-        %x{#{cmd}}
+      ext     = "html"
+      verdict = {}
+      unless File.read("#{$conf[:testreferencefolder] }/#{outfilename}.#{ext}").cleanfordiff == File.read("#{$conf[:testoutputfolder]}/#{outfilename}.#{ext}").cleanfordiff
 
-        FileUtils.mv "screenshot.png", "#{$conf[:testoutputfolder]}/#{outfilename}.png"
 
-        if File.exist?("#{$conf[:testreferencefolder]}/#{outfilename}.png")
-          cmd            = %Q{pixelmatch "#{$conf[:testoutputfolder]}/#{outfilename}.png" "#{$conf[:testreferencefolder]}/#{outfilename}.png" "#{$conf[:testdifffolder]}/#{outfilename}.diff.png" 0.1}
-          changed_pixels = %x{#{cmd}}
-          changed_pixels = changed_pixels.match(/.*pixels:\s*(\d+).*/)[1].to_i
-          FileUtils.rm "#{$conf[:testdifffolder]}/#{outfilename}.diff.png" if changed_pixels == 0
-          expect(changed_pixels).to be == 0
+        if chrome
+          fullfile = File.absolute_path("#{$conf[:testoutputfolder]}/#{outfilename}.html").gsub(" ", "%20")
+          cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=1280,1696 "file://#{fullfile}" &> chrome.log}
+          %x{#{cmd}}
+
+          FileUtils.mv "screenshot.png", "#{$conf[:testoutputfolder]}/#{outfilename}.png"
+
+          if File.exist?("#{$conf[:testreferencefolder]}/#{outfilename}.png")
+            cmd            = %Q{pixelmatch "#{$conf[:testoutputfolder]}/#{outfilename}.png" "#{$conf[:testreferencefolder]}/#{outfilename}.png" "#{$conf[:testdifffolder]}/#{outfilename}.diff.png" 0.1}
+            changed_pixels = %x{#{cmd}}
+            changed_pixels = changed_pixels.match(/.*pixels:\s*(\d+).*/)[1].to_i
+            FileUtils.rm "#{$conf[:testdifffolder]}/#{outfilename}.diff.png" if changed_pixels == 0
+            verdict[:changed_pixels] = changed_pixels unless changed_pixels == 0
+          end
         end
       end
 
@@ -43,10 +49,11 @@ describe "abc2svg commandline" do
         referenceoutput = File.read("#{$conf[:testreferencefolder] }/#{outfilename}.#{ext}").cleanfordiff
         testoutput      = File.read("#{$conf[:testoutputfolder]}/#{outfilename}.#{ext}").cleanfordiff
 
-        expect(testoutput).not_to include("*** Abort")
-        expect(testoutput).to eq referenceoutput
+        verdict[:abort] = true if testoutput.include?("*** Abort")
+        verdict[ext.to_sym] = "different" unless testoutput == referenceoutput
       end
 
+      expect(verdict).to eq({})
     end
   end
 
