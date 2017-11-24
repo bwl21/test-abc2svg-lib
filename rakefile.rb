@@ -44,7 +44,7 @@ desc "execute rspec with given examples"
 task :rspec, [:example] => :buildabc2svg do |t, args|
   example = ""
   example = "-e #{args[:example]}" if args[:example]
-  sh "rspec #{File.dirname(__FILE__)}/abc2svg_spec.rb #{example } -f html --out '#{$conf[:testresultfolder]}/#{abcversion}.html' -f progress"
+  sh "rspec #{File.dirname(__FILE__)}/abc2svg_spec.rb #{example } -f html --out '#{$conf[:testresultfolder]}/#{abcversion}.html' -f progress" rescue nil
 end
 
 desc "copy testresults to reference"
@@ -61,6 +61,25 @@ desc "show testresult html page"
 task :show do
   cmd = %Q{open "#{$conf[:testresultfolder]}/#{abcversion}.html"}
   `#{cmd}`
+end
+
+desc "show the changed png"
+task :showpng, [:example] do |t, args|
+  pattern = "*#{args[:example]}*.png"
+  diffpattern = "*#{args[:example]}*.diff.png"
+
+  [:testreferencefolder, :testoutputfolder, :testdifffolder].each do |folder|
+    files = Dir["#{$conf[folder]}/#{pattern}"]
+    files = Dir["#{$conf[folder]}/#{diffpattern}"] if files.empty?
+
+    if files.count == 1
+      cmd = %Q{open "#{files.first}"}
+      `#{cmd}`
+    else
+      puts "Should have exactly one file to display! Found #{files.count} files for #{pattern} #{files}"
+      exit(0)
+    end
+  end
 end
 
 
