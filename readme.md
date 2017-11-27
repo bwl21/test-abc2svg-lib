@@ -54,6 +54,7 @@ abc2svg (https://github.com/moinejf/abc2svg)
         testreferencefolder: "#{testfolder}/test-reference",
         testresultfolder:    "#{testfolder}/test-results",
         testdifffolder:      "#{testfolder}/test-diff",
+        testsourcefolder:    "#{testfolder}/test-source",
         sourcefiles:         Dir["../**/*.abc"].uniq {|f| File.basename(f)}, 
         chrome:              '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome',
 
@@ -79,14 +80,28 @@ abc2svg (https://github.com/moinejf/abc2svg)
     rake 
     ```
 
-11. create first reference
+11. collect the sources
+
+    ``` {.sh}
+    rake buildsources
+    ```
+
+12. create first reference
 
     ``` {.sh}
     rake rspec
     rake buildreference
     ```
 
-12. commit this to git if you wish
+13. commit this to git if you wish
+
+# usage
+
+list the rake tasks by
+
+``` {.sh}
+rake
+```
 
 # Hints
 
