@@ -42,7 +42,7 @@ describe "abc2svg commandline" do
       unless testreference == testoutput
         if chrome
           fullfile = File.absolute_path("#{outfilebase}.html").gsub(" ", "%20")
-          cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=1280,1696 "file://#{fullfile}" &> chrome.log}
+          cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=#{$conf[:windowsize]} "file://#{fullfile}" &> chrome.log}
           %x{#{cmd}}
 
           FileUtils.mv "screenshot.png", "#{outfilebase}.png"
