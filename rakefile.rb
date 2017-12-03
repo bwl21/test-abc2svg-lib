@@ -88,7 +88,7 @@ Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].each do |f|
     htmlfile = t.source
     fullfile = File.absolute_path("#{htmlfile}").gsub(" ", "%20")
 
-    cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=1280,1696 "file://#{fullfile}" &> chrome.log}
+    cmd = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=#{$conf[:windowsize]} "file://#{fullfile}" &> chrome.log}
     %x{#{cmd}}
     FileUtils.mv "screenshot.png", pngfilename
   end
@@ -96,7 +96,7 @@ end
 
 
 desc "create reference pngs"
-task :buildreferencepngs => Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].map{|f| %Q{#{File.dirname(f)}/#{File.basename(f, ".html")}.png}}
+task :buildreferencepngs => Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].map {|f| %Q{#{File.dirname(f)}/#{File.basename(f, ".html")}.png}}
 
 desc "show testresult html page"
 task :show, [:example] do |t, args|
@@ -171,5 +171,45 @@ task :default do
 
        }
 end
+
+desc "show the changed png"
+task :showdiff, [:example] do |t, args|
+
+  def mk_row(difffilename)
+    filename = difffilename.gsub(".diff.", ".")
+
+    referr = File.read(%Q{#{$conf[:testreferencefolder]}/#{File.basename(filename, ".png")}.err}).gsub("\n", "<br/>")
+    outerr = File.read(%Q{#{$conf[:testoutputfolder]}/#{File.basename(filename, ".png")}.err}).gsub("\n", "<br/>")
+    %Q{
+       <h1 style="page-break-before: always;">#{filename}</h>
+       <table width="100%" border="1">
+            <tr valign="top">
+               <td width="30%"><img src="#{$conf[:testreferencefolder]}/#{filename}" width="100%"></img><p>#{referr}</p></td>
+               <td width="30%"><img src="#{$conf[:testdifffolder]}/#{difffilename}" width="100%"></img></td>
+               <td width="30%"><img src="#{$conf[:testoutputfolder]}/#{filename}" width="100%"></img><p>#{outerr}</p></td>
+            </tr>
+          </table>
+    }
+  end
+
+  files_to_show = Dir["#{$conf[:testdifffolder]}/*.diff.png"].map{|f| File.basename(f)}
+
+  showfile = "testdiff.html"
+
+  File.open(showfile, "w") do |f|
+    f.puts %Q{
+        <html>
+        <body>
+         #{files_to_show.map {|f| mk_row(f)}.join("\n")}
+        </body>
+      </html>
+    }
+
+    cmd = %Q{open "#{showfile}"}
+    `#{cmd}`
+
+  end
+end
+
 
 task :help => :default
