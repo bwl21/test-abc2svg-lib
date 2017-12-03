@@ -38,6 +38,8 @@ else
   exit
 end
 
+chrome = $conf[:chrome]
+
 Rake::TaskManager.record_task_metadata = true
 
 abc2svgversion = "unknown" # need to do this to allocate abcversion
@@ -77,6 +79,24 @@ task :buildreference, [:example] do |t, args|
 
   Dir["#{$conf[:testoutputfolder]}/#{pattern}"].each {|file| cp file, $conf[:testreferencefolder]}
 end
+
+
+Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].each do |f|
+  pngfilename = %Q{#{File.dirname(f)}/#{File.basename(f, ".html")}.png}
+
+  file pngfilename => f do |t, args|
+    htmlfile = t.source
+    fullfile = File.absolute_path("#{htmlfile}").gsub(" ", "%20")
+
+    cmd      = %Q{#{chrome} --headless --disable-gpu --screenshot --window-size=1280,1696 "file://#{fullfile}" &> chrome.log}
+    %x{#{cmd}}
+    FileUtils.mv "screenshot.png", pngfilename
+  end
+end
+
+
+desc "create reference pngs"
+task :buildreferencepngs => Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].map{|f| %Q{#{File.dirname(f)}/#{File.basename(f, ".html")}.png}}
 
 desc "show testresult html page"
 task :show, [:example] do |t, args|

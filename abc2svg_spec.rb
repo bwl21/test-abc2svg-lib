@@ -20,6 +20,7 @@ describe "abc2svg commandline" do
       outfilename = File.basename(sourcefilename)
 
       outfilebase = "#{$conf[:testoutputfolder]}/#{outfilename}"
+      outfilebasename = File.basename(outfilebase)
       reffilebase = "#{$conf[:testreferencefolder]}/#{outfilename}"
       difffilebase = "#{$conf[:testdifffolder]}/#{outfilename}"
 
@@ -58,8 +59,8 @@ describe "abc2svg commandline" do
 
       ["err", "html"].each do |ext|
 
-        testoutput      = File.read("#{outfilebase}.#{ext}").cleanfordiff
-        referenceoutput = File.read("#{reffilebase}.#{ext}").cleanfordiff rescue testoutput
+        testoutput      = File.read("#{outfilebase}.#{ext}").cleanfordiff.gsub(/^.*#{outfilebasename}/, outfilebasename)
+        referenceoutput = File.read("#{reffilebase}.#{ext}").cleanfordiff.gsub(/^.*#{outfilebasename}/, outfilebasename) rescue testoutput
 
         verdict[:abort] = true if testoutput.include?("*** Abort")
         verdict[ext.to_sym] = "different" unless testoutput == referenceoutput
