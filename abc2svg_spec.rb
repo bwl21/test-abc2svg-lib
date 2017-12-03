@@ -1,7 +1,7 @@
 load("config.mft.rb")
 
 sourcefiles = Dir["#{$conf[:testsourcefolder]}/*.abc"]
-sourcefiles = $conf[:sourcefiles]
+#sourcefiles = $conf[:sourcefiles]
 
 class String
   def cleanfordiff
