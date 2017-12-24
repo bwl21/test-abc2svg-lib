@@ -55,7 +55,10 @@ describe "abc2svg commandline" do
             verdict[:changed_pixels] = changed_pixels unless changed_pixels == 0
           end
         end
+      else
+        FileUtils.rm "#{difffilebase}.diff.png" if File.exist?("#{difffilebase}.diff.png")
       end
+
 
       ["err", "html"].each do |ext|
 

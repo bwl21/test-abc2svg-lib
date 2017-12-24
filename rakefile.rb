@@ -80,7 +80,7 @@ task :buildreference, [:example] do |t, args|
   Dir["#{$conf[:testoutputfolder]}/#{pattern}"].each {|file| cp file, $conf[:testreferencefolder]}
 end
 
-
+# install file tasks to produce reference pngs
 Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].each do |f|
   pngfilename = %Q{#{File.dirname(f)}/#{File.basename(f, ".html")}.png}
 
