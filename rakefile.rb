@@ -1,3 +1,6 @@
+require 'diff/lcs'
+require 'diff/lcs/ldiff'
+
 configfile = "config.mft.rb"
 
 def process_example_argument(args)
@@ -10,6 +13,13 @@ def process_example_argument(args)
 
   return example, example_doc
 end
+
+
+def get_reference_version(referenceversionfile)
+  refabc2svgversion = File.read(referenceversionfile).split("reference produced with abc2svg").last.strip rescue "_unknown_"
+  "abc2svg-#{refabc2svgversion}"
+end
+
 
 if File.exist?(configfile)
   load("config.mft.rb")
@@ -47,8 +57,7 @@ cd $conf[:abc2svghome], verbose: false do
   abc2svgversion = `git describe`.strip
 end
 
-refabc2svgversion = File.read(referenceversionfile).split("reference produced with abc2svg").last.strip rescue "_unknown_"
-refabc2svgversion = "abc2svg-#{refabc2svgversion}"
+refabc2svgversion = get_reference_version(referenceversionfile)
 
 
 #desc "compile abc2svg"
@@ -62,7 +71,9 @@ end
 desc "execute rspec with given examples"
 task :rspec, [:example] => :buildabc2svg do |t, args|
 
-  example, example_doc, resultfile = process_example_argument(args)
+  example, example_doc = process_example_argument(args)
+
+  Dir["test-diff/*"].each{|f| rm f} if example.nil?
 
   resultfile = "#{$conf[:testresultfolder]}/abc2svg-#{abc2svgversion}/abc2svg-#{abc2svgversion}_vs_#{refabc2svgversion}#{example_doc}.html"
 
@@ -178,15 +189,24 @@ task :showdiff, [:example] do |t, args|
   def mk_row(difffilename)
     filename = difffilename.gsub(".diff.", ".")
 
-    referr = File.read(%Q{#{$conf[:testreferencefolder]}/#{File.basename(filename, ".png")}.err}).gsub("\n", "<br/>")
-    outerr = File.read(%Q{#{$conf[:testoutputfolder]}/#{File.basename(filename, ".png")}.err}).gsub("\n", "<br/>")
+    referr = File.read(%Q{#{$conf[:testreferencefolder]}/#{File.basename(filename, ".png")}.err})
+    outerr = File.read(%Q{#{$conf[:testoutputfolder]}/#{File.basename(filename, ".png")}.err})
+
+
+    diff_as_html = []
+    diff_as_html.push %Q{<p>}
+    callback_obj = DiffToHtmlCallbacks.new(diff_as_html)
+    xx           = Diff::LCS.traverse_balanced(referr, outerr, callback_obj)
+    diff_as_html.push %Q{</p>}
+    diff_as_html = diff_as_html.join
+
     %Q{
        <h1 style="page-break-before: always;">#{filename}</h>
        <table width="100%" border="1">
             <tr valign="top">
-               <td width="30%"><img src="#{$conf[:testreferencefolder]}/#{filename}" width="100%"></img><p>#{referr}</p></td>
-               <td width="30%"><img src="#{$conf[:testdifffolder]}/#{difffilename}" width="100%"></img></td>
-               <td width="30%"><img src="#{$conf[:testoutputfolder]}/#{filename}" width="100%"></img><p>#{outerr}</p></td>
+               <td width="30%"><img src="../../#{$conf[:testreferencefolder]}/#{filename}" width="100%"></img><p>#{referr.gsub("\n", "<br/>")}</p></td>
+               <td width="30%"><img src="../../#{$conf[:testdifffolder]}/#{difffilename}" width="100%">#{diff_as_html.gsub("\n", "<br/>")}</img></td>
+               <td width="30%"><img src="../../#{$conf[:testoutputfolder]}/#{filename}" width="100%"></img><p>#{outerr.gsub("\n", "<br/>")}</p></td>
             </tr>
           </table>
     }
@@ -194,7 +214,7 @@ task :showdiff, [:example] do |t, args|
 
   files_to_show = Dir["#{$conf[:testdifffolder]}/*.diff.png"].map{|f| File.basename(f)}
 
-  showfile = "testdiff.html"
+  showfile = "#{$conf[:testresultfolder]}/abc2svg-#{abc2svgversion}/abc2svg-#{abc2svgversion}_vs_#{refabc2svgversion}.diff.html"
 
   File.open(showfile, "w") do |f|
     f.puts %Q{
@@ -213,3 +233,63 @@ end
 
 
 task :help => :default
+
+class DiffToHtmlCallbacks
+  attr_accessor :output
+
+  def initialize(output, options = {})
+    @output       = output
+    @state        = :init
+    @line_started = true
+    options       ||= {}
+
+    @styles={
+        ins: "text-decoration: underline;color:#006622; background-color: #ccffdd; ",
+        del: "text-decoration: line-through;color:#ff0000; background-color: #ffe6e6;",
+        eq:  ""
+    }
+
+  end
+
+  def to_html(element)
+    case element
+      when "\n"
+        result = "<br/>"
+        @line_started = true
+      when " "
+        result = @line_started ? '&nbsp' : " "
+      else
+        @line_started = false
+        result = element.gsub(/[<>&]/, {"\n" => '<br/>', '<' => '&lt;', '>' => '&gt;', '&' => '&amp;'})
+    end
+    result
+  end
+
+  def handle_entry(element, state)
+    unless @state == state
+      @output.push "</span>" unless @state == :init
+      @state = state
+      @output.push %Q{<span style="#{@styles[state]}">}
+    end
+
+    @output.push(to_html(element))
+  end
+
+  private :handle_entry
+
+# This will be called with both lines are the same
+  def match(event)
+    handle_entry(event.old_element, :eq)
+  end
+
+# This will be called when there is a line in A that isn't in B
+  def discard_a(event)
+    handle_entry(event.old_element, :del)
+  end
+
+# This will be called when there is a line in B that isn't in A
+  def discard_b(event)
+    handle_entry(event.new_element, :ins)
+  end
+
+end
