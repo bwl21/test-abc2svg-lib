@@ -1,6 +1,8 @@
 require 'diff/lcs'
 require 'diff/lcs/ldiff'
 
+NINJAEXEC = File.absolute_path("../../200_Zupfnoter/30_sources/ZSUPP_Tools/macOs/ninja")
+
 configfile = "config.mft.rb"
 
 def process_example_argument(args)
@@ -63,7 +65,7 @@ refabc2svgversion = get_reference_version(referenceversionfile)
 #desc "compile abc2svg"
 task :buildabc2svg do
   cd $conf[:abc2svghome] do
-    puts `./ninja`
+    puts `#{NINJAEXEC}`
   end
 end
 
