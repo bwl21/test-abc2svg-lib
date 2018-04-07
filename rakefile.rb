@@ -60,7 +60,10 @@ cd $conf[:abc2svghome], verbose: false do
 end
 
 refabc2svgversion = get_reference_version(referenceversionfile)
+testname = %Q{abc2svg-#{abc2svgversion}_vs_#{refabc2svgversion}}
 
+
+###############################################################################
 
 #desc "compile abc2svg"
 task :buildabc2svg do
@@ -77,7 +80,7 @@ task :rspec, [:example] => :buildabc2svg do |t, args|
 
   Dir["test-diff/*"].each{|f| rm f} if example.nil?
 
-  resultfile = "#{$conf[:testresultfolder]}/abc2svg-#{abc2svgversion}/abc2svg-#{abc2svgversion}_vs_#{refabc2svgversion}#{example_doc}.html"
+  resultfile = "#{$conf[:testresultfolder]}/#{testname}#{example_doc}.html"  # note that example_doc brings the "_" separator
 
 
   sh "rspec #{File.dirname(__FILE__)}/abc2svg_spec.rb #{example } -f html --out '#{resultfile}' -f progress" rescue nil
@@ -114,9 +117,9 @@ task :buildreferencepngs => Dir[%Q{#{$conf[:testreferencefolder]}/*.html}].map {
 desc "show testresult html page"
 task :show, [:example] do |t, args|
 
-  example, example_doc, resultfile = process_example_argument(args)
+  example, example_doc = process_example_argument(args)
 
-  resultfile = "#{$conf[:testresultfolder]}/abc2svg-#{abc2svgversion}/abc2svg-#{abc2svgversion}_vs_#{refabc2svgversion}#{example_doc}.html"
+  resultfile = "#{$conf[:testresultfolder]}/#{testname}#{example_doc}.html" # note that example_doc brings the "_" separator
 
   cmd = %Q{open "#{resultfile}"}
   `#{cmd}`
@@ -232,6 +235,42 @@ task :showdiff, [:example] do |t, args|
 
   end
 end
+
+desc "commit the recent test"
+task :commit_test do
+  cmd = %Q{git add -A}
+  sh cmd
+  cmd = %Q{git commit -m "test-results #{testname}"}
+  sh cmd
+end
+
+desc "commit the current result as reference"
+task :commit_ref do
+  cmd = %Q(git add -A #{$conf[:testreferencefolder]})
+  sh cmd
+  cmd = %Q{git commit -m "reference produced with #{ get_reference_version(referenceversionfile)}"}
+  sh cmd
+end
+
+desc "baseline a test"
+task :baseline do
+  sh "rake commit_test"
+  sh "rake buildreference"
+  sh "rake commit_ref"
+end
+
+desc "show status"
+task :status do
+  puts %Q{
+current test: #{testname}
+reference   : #{get_reference_version(referenceversionfile)}
+
+git status:
+
+#{`git status`}
+}
+end
+
 
 
 task :help => :default
